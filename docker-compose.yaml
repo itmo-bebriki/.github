@@ -1,0 +1,216 @@
+services:
+  gateway:
+    image: ghcr.io/itmo-bebriki/gateway:main
+    container_name: gateway
+    ports:
+      - "8000:8080"
+    networks:
+      - task-service-network
+      - board-service-network
+      - analytics-service-network
+    depends_on:
+      - task-service
+      - board-service
+      - analytics-service
+    restart: always
+
+  postgres-tasks:
+    image: postgres:latest
+    container_name: postgres-tasks
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5435:5432"
+    restart: unless-stopped
+    networks:
+      - task-service-network
+    volumes:
+      - task-service-pg-data:/var/lib/postgresql/data
+
+  postgres-boards:
+    image: postgres:latest
+    container_name: postgres-boards
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5436:5432"
+    restart: unless-stopped
+    networks:
+      - board-service-network
+    volumes:
+      - board-service-pg-data:/var/lib/postgresql/data
+
+  postgres-analytics:
+    image: postgres:latest
+    container_name: postgres-analytics
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5437:5432"
+    restart: unless-stopped
+    networks:
+      - analytics-service-network
+    volumes:
+      - analytics-service-pg-data:/var/lib/postgresql/data
+
+  task-service:
+    image: ghcr.io/itmo-bebriki/task-service:main
+    container_name: task-service
+    environment:
+      Infrastructure__Persistence__Postgres__Host: "postgres-tasks"
+      Infrastructure__Persistence__Postgres__Port: "5432"
+      Infrastructure__Persistence__Postgres__Database: "postgres"
+      Infrastructure__Persistence__Postgres__Username: "postgres"
+      Infrastructure__Persistence__Postgres__Password: "postgres"
+      Infrastructure__Persistence__Postgres__SslMode: "Prefer"
+      Presentation__Kafka__Host: "kafka:9094"
+    ports:
+      - "8080:8080"
+    networks:
+      - task-service-network
+    depends_on:
+      - postgres-tasks
+      - kafka
+    restart: always
+
+  board-service:
+    image: ghcr.io/itmo-bebriki/board-service:main
+    container_name: board-service
+    environment:
+      Infrastructure__Persistence__Postgres__Host: "postgres-boards"
+      Infrastructure__Persistence__Postgres__Port: "5432"
+      Infrastructure__Persistence__Postgres__Database: "postgres"
+      Infrastructure__Persistence__Postgres__Username: "postgres"
+      Infrastructure__Persistence__Postgres__Password: "postgres"
+      Infrastructure__Persistence__Postgres__SslMode: "Prefer"
+      Presentation__Kafka__Host: "kafka:9094"
+    ports:
+      - "8081:8081"
+    networks:
+      - board-service-network
+    depends_on:
+      - postgres-boards
+      - kafka
+    restart: always
+
+  analytics-service:
+    image: ghcr.io/itmo-bebriki/analytics-service:main
+    container_name: analytics-service
+    environment:
+      Infrastructure__Persistence__Postgres__Host: "postgres-analytics"
+      Infrastructure__Persistence__Postgres__Port: "5432"
+      Infrastructure__Persistence__Postgres__Database: "postgres"
+      Infrastructure__Persistence__Postgres__Username: "postgres"
+      Infrastructure__Persistence__Postgres__Password: "postgres"
+      Infrastructure__Persistence__Postgres__SslMode: "Prefer"
+      Presentation__Kafka__Host: "kafka:9094"
+    ports:
+      - "8082:8082"
+    networks:
+      - analytics-service-network
+    depends_on:
+      - postgres-analytics
+      - kafka
+    restart: always
+  
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    restart: unless-stopped
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - task-service-network
+      - board-service-network
+      - analytics-service-network
+    volumes:
+      - zookeeper-data:/data
+  
+  kafka:
+    image: wurstmeister/kafka:latest
+    restart: unless-stopped
+    environment:
+      KAFKA_LOG_DIRS: /kafka-data
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENERS: EXTERNAL://:9092,INTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://127.0.0.1:8001,INTERNAL://kafka:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: yes
+      KAFKA_CREATE_TOPICS: >
+        job_task_processing:1:1,
+        job_task_info:1:1,
+        board_info:1:1,
+        topic_info:1:1,
+    depends_on:
+      - zookeeper
+    networks:
+      - task-service-network
+      - board-service-network
+      - analytics-service-network
+    volumes:
+      - kafka-data:/kafka-data
+    ports:
+      - '8001:9092'
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    networks:
+      - task-service-network
+      - board-service-network
+      - analytics-service-network
+    ports:
+      - "8003:8080"
+    volumes:
+      - ./task-service/src/Presentation/Itmo.Bebriki.Tasks.Presentation.Kafka/protos:/schemas/task
+      - ./board-service/src/Presentation/Itmo.Bebriki.Boards.Presentation.Kafka/protos:/schemas/board
+    environment:
+      kafka.clusters.0.name: kafka
+      kafka.clusters.0.bootstrapServers: kafka:9094
+      kafka.clusters.0.defaultKeySerde: ProtobufFile
+      kafka.clusters.0.defaultValueSerde: ProtobufFile
+      
+      kafka.clusters.0.serde.0.name: ProtobufFile
+      kafka.clusters.0.serde.0.properties.protobufFilesDir: /schemas/
+
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_processing: itmo.bebriki.tasks.kafka.JobTaskProcessingKey
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoKey
+      
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_processing: itmo.bebriki.tasks.kafka.JobTaskProcessingValue
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoValue
+      
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.board_info: itmo.bebriki.boards.kafka.BoardInfoKey
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.topic_info: itmo.bebriki.topics.kafka.TopicInfoKey
+      
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.board_info: itmo.bebriki.boards.kafka.BoardInfoValue
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.topic_info: itmo.bebriki.topics.kafka.TopicInfoValue
+
+networks:
+  board-service-network:
+    driver: bridge
+  task-service-network:
+    driver: bridge
+  analytics-service-network:
+    driver: bridge
+
+volumes:
+  task-service-pg-data:
+  board-service-pg-data:
+  analytics-service-pg-data:
+  kafka-data:
+  zookeeper-data:
