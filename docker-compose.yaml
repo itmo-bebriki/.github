@@ -2,6 +2,12 @@ services:
   gateway:
     image: ghcr.io/itmo-bebriki/gateway:main
     container_name: gateway
+    environment:
+      Client__Configuration__TaskService__Address: "http://task-service:8080"
+      Client__Configuration__BoardService__Address: "http://board-service:8081"
+      Client__Configuration__TopicService__Address: "http://board-service:8081"
+      Client__Configuration__AnalyticsService__Address: "http://analytics-service:8082"
+      Client__Configuration__HistoryService__Address: "http://analytics-service:8082"
     ports:
       - "8000:8080"
     networks:
