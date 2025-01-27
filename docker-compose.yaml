@@ -12,14 +12,12 @@ services:
     ports:
       - "8000:8080"
     networks:
-      - task-service-network
-      - board-service-network
-      - analytics-service-network
-      - agreement-service-network
+      - service-network
     depends_on:
       - task-service
       - board-service
       - analytics-service
+      - agreement-service
     restart: always
 
   postgres-tasks:
@@ -33,7 +31,7 @@ services:
       - "5435:5432"
     restart: unless-stopped
     networks:
-      - task-service-network
+      - service-network
     volumes:
       - task-service-pg-data:/var/lib/postgresql/data
 
@@ -48,7 +46,7 @@ services:
       - "5436:5432"
     restart: unless-stopped
     networks:
-      - board-service-network
+      - service-network
     volumes:
       - board-service-pg-data:/var/lib/postgresql/data
 
@@ -63,7 +61,7 @@ services:
       - "5437:5432"
     restart: unless-stopped
     networks:
-      - analytics-service-network
+      - service-network
     volumes:
       - analytics-service-pg-data:/var/lib/postgresql/data
 
@@ -78,7 +76,7 @@ services:
       - "5438:5432"
     restart: unless-stopped
     networks:
-      - agreement-service-network
+      - service-network
     volumes:
       - agreement-service-pg-data:/var/lib/postgresql/data
   
@@ -96,7 +94,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - task-service-network
+      - service-network
     depends_on:
       - postgres-tasks
       - kafka
@@ -116,7 +114,7 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - board-service-network
+      - service-network
     depends_on:
       - postgres-boards
       - kafka
@@ -136,7 +134,7 @@ services:
     ports:
       - "8082:8082"
     networks:
-      - analytics-service-network
+      - service-network
     depends_on:
       - postgres-analytics
       - kafka
@@ -156,7 +154,7 @@ services:
     ports:
       - "8083:8083"
     networks:
-      - agreement-service-network
+      - service-network
     depends_on:
       - postgres-agreement
       - kafka
@@ -172,10 +170,7 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
-      - task-service-network
-      - board-service-network
-      - analytics-service-network
-      - agreement-service-network
+      - service-network
     volumes:
       - zookeeper-data:/data
   
@@ -200,10 +195,7 @@ services:
     depends_on:
       - zookeeper
     networks:
-      - task-service-network
-      - board-service-network
-      - analytics-service-network
-      - agreement-service-network
+      - service-network
     volumes:
       - kafka-data:/kafka-data
     ports:
@@ -217,10 +209,7 @@ services:
     depends_on:
       - kafka
     networks:
-      - task-service-network
-      - board-service-network
-      - analytics-service-network
-      - agreement-service-network
+      - service-network
     ports:
       - "8003:8080"
     volumes:
@@ -249,13 +238,7 @@ services:
       kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.topic_info: itmo.bebriki.topics.kafka.TopicInfoValue
 
 networks:
-  board-service-network:
-    driver: bridge
-  task-service-network:
-    driver: bridge
-  analytics-service-network:
-    driver: bridge
-  agreement-service-network:
+  service-network:
     driver: bridge
 
 volumes:
