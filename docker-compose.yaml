@@ -231,11 +231,9 @@ services:
       kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_decisions: itmo.bebriki.tasks.kafka.JobTaskDecisionKey
       kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_submissions: itmo.bebriki.tasks.kafka.JobTaskSubmissionKey
       kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoKey
-      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoKey
       
       kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_decisions: itmo.bebriki.tasks.kafka.JobTaskDecisionValue
       kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_submissions: itmo.bebriki.tasks.kafka.JobTaskSubmissionValue
-      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoValue
       kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoValue
       
       kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.board_info: itmo.bebriki.boards.kafka.BoardInfoKey
