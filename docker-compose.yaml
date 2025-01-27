@@ -65,6 +65,19 @@ services:
     volumes:
       - analytics-service-pg-data:/var/lib/postgresql/data
 
+  postgres-agreements:
+    image: postgres:latest
+    container_name: postgres-agreements
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5438:5432"
+    restart: unless-stopped
+    volumes:
+      - agreements-service-pg-data:/var/lib/postgresql/data
+  
   task-service:
     image: ghcr.io/itmo-bebriki/task-service:main
     container_name: task-service
@@ -124,6 +137,26 @@ services:
       - postgres-analytics
       - kafka
     restart: always
+
+  agreements-service:
+    image: ghcr.io/itmo-bebriki/agreement-service:main
+    container_name: agreements-service
+    environment:
+      Infrastructure__Persistence__Postgres__Host: "postgres-agreements"
+      Infrastructure__Persistence__Postgres__Port: "5432"
+      Infrastructure__Persistence__Postgres__Database: "postgres"
+      Infrastructure__Persistence__Postgres__Username: "postgres"
+      Infrastructure__Persistence__Postgres__Password: "postgres"
+      Infrastructure__Persistence__Postgres__SslMode: "Prefer"
+      Presentation__Kafka__Host: "kafka:9094"
+    ports:
+      - "8083:8083"
+    networks:
+      - task-service-network
+    depends_on:
+      - postgres-agreements
+      - kafka
+    restart: always
   
   zookeeper:
     image: wurstmeister/zookeeper:latest
@@ -154,7 +187,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
       ALLOW_PLAINTEXT_LISTENER: yes
       KAFKA_CREATE_TOPICS: >
-        job_task_processing:1:1,
+        job_task_decisions:1:1,
+        job_task_submissions:1:1,
         job_task_info:1:1,
         board_info:1:1,
         topic_info:1:1,
@@ -193,11 +227,15 @@ services:
       
       kafka.clusters.0.serde.0.name: ProtobufFile
       kafka.clusters.0.serde.0.properties.protobufFilesDir: /schemas/
-
-      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_processing: itmo.bebriki.tasks.kafka.JobTaskProcessingKey
+      
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_decisions: itmo.bebriki.tasks.kafka.JobTaskDecisionKey
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_submissions: itmo.bebriki.tasks.kafka.JobTaskSubmissionKey
+      kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoKey
       kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoKey
       
-      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_processing: itmo.bebriki.tasks.kafka.JobTaskProcessingValue
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_decisions: itmo.bebriki.tasks.kafka.JobTaskDecisionValue
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_submissions: itmo.bebriki.tasks.kafka.JobTaskSubmissionValue
+      kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoValue
       kafka.clusters.0.serde.0.properties.protobufMessageNameByTopic.job_task_info: itmo.bebriki.tasks.kafka.JobTaskInfoValue
       
       kafka.clusters.0.serde.0.properties.protobufMessageNameForKeyByTopic.board_info: itmo.bebriki.boards.kafka.BoardInfoKey
@@ -218,5 +256,6 @@ volumes:
   task-service-pg-data:
   board-service-pg-data:
   analytics-service-pg-data:
+  agreements-service-pg-data:
   kafka-data:
   zookeeper-data:
