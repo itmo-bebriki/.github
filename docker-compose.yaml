@@ -224,8 +224,7 @@ services:
     ports:
       - "8003:8080"
     volumes:
-      - ./task-service/src/Presentation/Itmo.Bebriki.Tasks.Presentation.Kafka/protos:/schemas/task
-      - ./board-service/src/Presentation/Itmo.Bebriki.Boards.Presentation.Kafka/protos:/schemas/board
+      - ./protos:/schemas
     environment:
       kafka.clusters.0.name: kafka
       kafka.clusters.0.bootstrapServers: kafka:9094
