@@ -15,6 +15,7 @@ services:
       - task-service-network
       - board-service-network
       - analytics-service-network
+      - agreement-service-network
     depends_on:
       - task-service
       - board-service
@@ -76,6 +77,8 @@ services:
     ports:
       - "5438:5432"
     restart: unless-stopped
+    networks:
+      - agreement-service-network
     volumes:
       - agreement-service-pg-data:/var/lib/postgresql/data
   
@@ -153,7 +156,7 @@ services:
     ports:
       - "8083:8083"
     networks:
-      - task-service-network
+      - agreement-service-network
     depends_on:
       - postgres-agreement
       - kafka
@@ -172,6 +175,7 @@ services:
       - task-service-network
       - board-service-network
       - analytics-service-network
+      - agreement-service-network
     volumes:
       - zookeeper-data:/data
   
@@ -199,6 +203,7 @@ services:
       - task-service-network
       - board-service-network
       - analytics-service-network
+      - agreement-service-network
     volumes:
       - kafka-data:/kafka-data
     ports:
@@ -215,6 +220,7 @@ services:
       - task-service-network
       - board-service-network
       - analytics-service-network
+      - agreement-service-network
     ports:
       - "8003:8080"
     volumes:
@@ -249,6 +255,8 @@ networks:
   task-service-network:
     driver: bridge
   analytics-service-network:
+    driver: bridge
+  agreement-service-network:
     driver: bridge
 
 volumes:
