@@ -65,9 +65,9 @@ services:
     volumes:
       - analytics-service-pg-data:/var/lib/postgresql/data
 
-  postgres-agreements:
+  postgres-agreement:
     image: postgres:latest
-    container_name: postgres-agreements
+    container_name: postgres-agreement
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -76,7 +76,7 @@ services:
       - "5438:5432"
     restart: unless-stopped
     volumes:
-      - agreements-service-pg-data:/var/lib/postgresql/data
+      - agreement-service-pg-data:/var/lib/postgresql/data
   
   task-service:
     image: ghcr.io/itmo-bebriki/task-service:main
@@ -138,11 +138,11 @@ services:
       - kafka
     restart: always
 
-  agreements-service:
+  agreement-service:
     image: ghcr.io/itmo-bebriki/agreement-service:main
-    container_name: agreements-service
+    container_name: agreement-service
     environment:
-      Infrastructure__Persistence__Postgres__Host: "postgres-agreements"
+      Infrastructure__Persistence__Postgres__Host: "postgres-agreement"
       Infrastructure__Persistence__Postgres__Port: "5432"
       Infrastructure__Persistence__Postgres__Database: "postgres"
       Infrastructure__Persistence__Postgres__Username: "postgres"
@@ -154,7 +154,7 @@ services:
     networks:
       - task-service-network
     depends_on:
-      - postgres-agreements
+      - postgres-agreement
       - kafka
     restart: always
   
@@ -254,6 +254,6 @@ volumes:
   task-service-pg-data:
   board-service-pg-data:
   analytics-service-pg-data:
-  agreements-service-pg-data:
+  agreement-service-pg-data:
   kafka-data:
   zookeeper-data:
