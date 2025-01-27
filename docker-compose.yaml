@@ -8,6 +8,7 @@ services:
       Client__Configuration__TopicService__Address: "http://board-service:8081"
       Client__Configuration__AnalyticsService__Address: "http://analytics-service:8082"
       Client__Configuration__HistoryService__Address: "http://analytics-service:8082"
+      Client__Configuration__AgreementService__Address: "http://agreement-service:8083"
     ports:
       - "8000:8080"
     networks:
