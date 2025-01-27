@@ -15,6 +15,10 @@ if [[ ! -d "analytics-service" ]]; then
 	git clone git@github.com:itmo-bebriki/analytics-service.git
 fi
 
+if [[ ! -d "agreement-service" ]]; then
+	git clone git@github.com:itmo-bebriki/agreement-service.git
+fi
+
 docker-compose up -d
 
 # Sleep 5 seconds and then restart all services.
@@ -26,3 +30,4 @@ sleep 5s
 docker restart task-service
 docker restart board-service
 docker restart analytics-service
+docker restart agreement-service
